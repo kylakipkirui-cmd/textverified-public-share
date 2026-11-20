@@ -249,7 +249,7 @@ def public_sms(token: str):
         {
             "to": row["number"],
             "reservationId": row["reservation_id"],
-            "reservationType": "renewable",
+            "reservationType": "nonrenewable",
         },
     )
     return {
