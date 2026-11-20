@@ -169,8 +169,36 @@ def share_page(token: str):
 @app.get("/api/admin/rentals")
 def rentals(password: str):
     admin_check(password)
-    data = tv_get("/reservations/rental/renewable")
-    return {"items": extract_list(data), "raw": data}
+
+    renewable = tv_get("/reservations/rental/renewable")
+    nonrenewable = tv_get("/reservations/rental/nonrenewable")
+
+    renewable_items = extract_list(renewable)
+    nonrenewable_items = extract_list(nonrenewable)
+
+    # Merge both rental types and remove duplicate reservation IDs.
+    items = []
+    seen = set()
+
+    for item in renewable_items + nonrenewable_items:
+        if not isinstance(item, dict):
+            continue
+
+        reservation_id = str(
+            item.get("id") or item.get("reservationId") or ""
+        ).strip()
+
+        if reservation_id and reservation_id not in seen:
+            seen.add(reservation_id)
+            items.append(item)
+
+    return {
+        "items": items,
+        "raw": {
+            "renewable": renewable,
+            "nonrenewable": nonrenewable
+        }
+    }
 
 
 @app.post("/api/admin/shares")
