@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: textverified-public-share
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: TV_EMAIL
+        sync: false
+      - key: TV_API_KEY
+        sync: false
+      - key: POLL_SECONDS
+        value: "10"

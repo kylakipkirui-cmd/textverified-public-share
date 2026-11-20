@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>短信分享管理</title>
+<style>body{font:16px Arial;max-width:900px;margin:30px auto;padding:0 16px;background:#f6f7f9;color:#222}section{background:white;padding:18px;border-radius:12px;margin:14px 0}input,button{padding:10px;margin:5px;border:1px solid #bbb;border-radius:7px}button{cursor:pointer;background:#222;color:white}pre{white-space:pre-wrap;word-break:break-all;background:#f1f1f1;padding:10px}small{color:#666}</style>
+<h2>Textverified 短信分享管理</h2><section><p>管理员密码</p><input id="pw" type="password" placeholder="输入 ADMIN_PASSWORD"><button onclick="loadRentals()">读取续租号码</button><button onclick="loadShares()">刷新分享列表</button><div id="msg"></div></section>
+<section><h3>续租号码</h3><div id="rentals">点击“读取续租号码”</div></section><section><h3>已创建的分享链接</h3><div id="shares"></div></section>
+<script>
+const $=x=>document.getElementById(x), pw=()=>encodeURIComponent($('pw').value);
+async function req(url,opt={}){let r=await fetch(url+(url.includes('?')?'&':'?')+'password='+pw(),opt);let j=await r.json();if(!r.ok)throw Error(j.detail||r.statusText);return j}
+function get(o,...ks){for(const k of ks)if(o&&o[k]!=null)return o[k];return ''}
+async function loadRentals(){try{let j=await req('/api/admin/rentals');let a=j.items||[];$('rentals').innerHTML=a.map(x=>{let id=get(x,'id','reservationId'),num=get(x,'number','phoneNumber','to');return `<div><b>${num}</b>　ID: ${id} <button onclick="make('${String(id).replaceAll("'","")}','${String(num).replaceAll("'","")}')">生成分享链接</button></div>`}).join('')||'<small>没有解析到号码。可检查 API 原始响应：</small><pre>'+JSON.stringify(j.raw,null,2)+'</pre>'}catch(e){$('rentals').textContent=e.message}}
+async function make(id,number){try{let j=await req('/api/admin/shares',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reservationId:id,number})});let u=location.origin+j.url;await navigator.clipboard.writeText(number+'----'+u);alert('已生成并复制：\n'+number+'----'+u);loadShares()}catch(e){alert(e.message)}}
+async function loadShares(){try{let j=await req('/api/admin/shares');$('shares').innerHTML=j.items.map(x=>`<p>${x.number}<br><a href="/share/${x.token}" target="_blank">${location.origin}/share/${x.token}</a>　<button onclick="toggle('${x.token}',${!x.enabled})">${x.enabled?'停用':'启用'}</button></p>`).join('')||'暂无链接'}catch(e){$('shares').textContent=e.message}}
+async function toggle(t,e){try{await req('/api/admin/shares/'+t+'/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:e})});loadShares()}catch(x){alert(x.message)}}
+</script>
