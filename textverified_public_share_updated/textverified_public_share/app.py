@@ -166,6 +166,7 @@ def share_page(token: str):
         return file.read()
 
 
+
 @app.get("/api/admin/rentals")
 def rentals(password: str):
     admin_check(password)
@@ -176,7 +177,6 @@ def rentals(password: str):
     renewable_items = extract_list(renewable)
     nonrenewable_items = extract_list(nonrenewable)
 
-    # Merge both rental types and remove duplicate reservation IDs.
     items = []
     seen = set()
 
@@ -188,17 +188,23 @@ def rentals(password: str):
             item.get("id") or item.get("reservationId") or ""
         ).strip()
 
-        if reservation_id and reservation_id not in seen:
-            seen.add(reservation_id)
-            items.append(item)
+        if not reservation_id or reservation_id in seen:
+            continue
+
+        state = str(item.get("state", "")).strip().lower()
+
+        # Only retain rentals explicitly confirmed as active.
+        if state not in ("renewableactive", "nonrenewableactive", "active"):
+            continue
+
+        seen.add(reservation_id)
+        items.append(item)
 
     return {
         "items": items,
-        "raw": {
-            "renewable": renewable,
-            "nonrenewable": nonrenewable
-        }
+        "count": len(items)
     }
+
 
 
 @app.post("/api/admin/shares")
