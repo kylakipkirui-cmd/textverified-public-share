@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: textverified-public-share
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: share-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/shares.db
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: TV_BEARER_TOKEN
+        sync: false
+      - key: POLL_SECONDS
+        value: "10"
